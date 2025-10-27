@@ -351,7 +351,7 @@ DT::DTOutput(): aca ponemos un objeto de este tipo en la interfaz, y luego **Ren
 </h2>
 
 Hasta ahora no hemos hecho algo nuevo a lo que vemos haciendo como en html.
-Todavia no hemos otorgado a nuestra app la interactividad deseada &#x279C; para lograr eso, necestiamos incluir ciertos **WIDGETS** en nuestra app. Podemos pensar a un **widgets* como un elemento prefabricado que nos la la posibilidad de transmitirle informacion a la app sobre lo que queremos.
+Todavia no hemos otorgado a nuestra app la interactividad deseada &#x279C; para lograr eso, necestiamos incluir ciertos **WIDGETS** en nuestra app. Podemos pensar a un **widgets** como un elemento prefabricado que nos da la posibilidad de transmitirle información a la app sobre lo que queremos.
 Los mas comunes:
 
 - **shiny::checkboxGroupInput()**: listado de opciones para marcar (multiple choice)
@@ -442,7 +442,7 @@ Osea nos falta **atar todo al servidor**.
 
 </h2>
 
-&#x279C; Cada uno de los **widgets** comjnica al **Server** el valor seleccionado por el usuarios a través de la lista *input*. 
+&#x279C; Cada uno de los **widgets** comunica al **Server** el valor seleccionado por el usuarios a través de la lista *input*. 
 
 &#x279C; Para acceder al valor definido por un usuario para un determinado widget usamos el &#x279C; **input ID**.
 
@@ -454,7 +454,7 @@ Osea nos falta **atar todo al servidor**.
 
 &#x279C; utilizaremos input$album para **filtrar** el conjunto de datos original de acuerdo a los albunes seleccionados por el usuario, luego obtendremos las CP a partir de la base filtrada y por ultimo armaremos el grafico segun los valores de input.ejex e input.ejey.
 
-&#x279C; la **base filtrada** debe ser un **elemento reactivo**,  es decir, un **objeto de R cuyo valor no sea fijo**, sino que se **actualice de a cuerdo a las opciones que sellecionemos en pantalla**. 
+&#x279C; la **base filtrada** debe ser un **elemento reactivo**,  es decir, un **objeto de R cuyo valor no sea fijo**, sino que se **actualice de a cuerdo a las opciones que seleccionemos en pantalla**. 
 
 &#x279C; esto se logra mediante la funcion **shiny::reactive()**. Dentro de nuestra funcion servidor podemos incluir el siguiente codigo:
 
@@ -469,15 +469,15 @@ base_filtrada <- shiny::reactive({
 Cuando estamos usando **elementos reactivos** tenemos que llamarlos agregando **un par de paréntesis al final de su nombre**, por ejemplo: base_filtrada() en vez de base_filtrada 
 
 
-&#x279C; El **elemento reactivo** definido permite que R **actualice su valor** a medida que el usuario de la app elige diferentes albunes.
+&#x279C; El **elemento reactivo** definido permite que R **actualice su valor** a medida que el usuario de la app elige diferentes albumes.
 
 La lógica es simple:
 
-- si definimos *base_filtrada <- dplyr::filter(datos, album %in% c("Innuendo", "Jazz"))*, luego la app usará siempre las canciones que pertenecen a los albumes Innuendo y Jazz
+- si definimos *base_filtrada <- dplyr::filter(datos, album %in% c("Innuendo", "Jazz"))*, luego la app usará siempre las canciones que pertenecen a los albumes **Innuendo y Jazz**.
 
-- si definimos *base_filtrada <- shiny::reactive({dplyr::filter(datos, album %in% input$album)})*, el valor cambiará siempre que el usuario modifique manualmente el input asociado
+- si definimos *base_filtrada <- shiny::reactive({dplyr::filter(datos, album %in% input$album)})*, el **valor cambiará** siempre que el usuario modifique manualmente el input asociado.
 
-&#x279C; dado que los **objetos de R que dependen de**&#x279C; **valres reactivos tambien son reactivos**, el objeto donde guardamos el resultado de **ACP** tambien es **REACTIVO**(depende de la base de datos, que a su vez depende de los discos elegidos) &#x279C; todos estos detalles requieren que **modifiquemos** el código original:
+&#x279C; dado que los **objetos de R que dependen de**&#x279C; **valores reactivos tambien son reactivos**, el objeto donde guardamos el resultado de **ACP** tambien es **REACTIVO**(depende de la base de datos, que a su vez depende de los discos elegidos) &#x279C; todos estos detalles requieren que **modifiquemos** el código original:
 
 **Antes era:**
 ```{r, eval= FALSE}
