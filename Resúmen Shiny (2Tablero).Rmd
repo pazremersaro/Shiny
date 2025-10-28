@@ -1,0 +1,191 @@
+---
+title: "Resúmen de Shiny (2da clase)"
+author: "Remersaro Maria Paz"
+date: "2025-10-24"
+output: html_document
+---
+
+<style>
+h1.title {
+  color:#76EEC6;
+  text-align: center;
+}
+h4.author {
+  color: #999;
+  text-align: center;
+}
+h4.date {
+  color: #999;
+  text-align: center;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(shiny)
+library(shinyWidgets)
+library(echarts4r)
+```
+
+<br><br>
+
+
+# Comunicación de Resultados &#x279C; *Dashboards*
+
+Vamos a hablar sobre **tableros** (*dashboards*) que son herramientas digitales orientadas a la visualización de una gran cantidad de indicadores relevantes para una empresa.
+Se caracterizan por **resumir** la información mas importante en pocos cuadros o gráficos, utilizando los datos de manera periódica, permitiendo un **monitoreo en tiempo real** del proceso que estamos analizando.
+
+Algunos ejemplos.
+
+
+# Dashboards con **bslib**
+
+Vamos a ver como usar *bslib* para crear la **interfaz**.
+
+&#x279C; la estructura de un dahsboard puede crearse proporcioando :
+
+- un *title*
+
+- *sidebar*
+
+- y un contenido del área principal a *bslib::page_sidebar()*
+
+```{r, eval= FALSE}
+ui <- bslib::page_sidebar(
+  title = "Mi Tablero",
+  sidebar = "Sidebar",
+  "Contenido del área principal"
+)
+
+server <- function(input, output) {} #Al server lo vemos mas adelante
+
+shiny::shinyApp(ui, server)
+```
+
+Tanto el **sidebar** como el contenido del **área principal** &#x279C; pueden contener cualquier cantidad arbitraria de **elementos** de interfaz, pero es mejor poner los **inputs en el **sidebar** y los **outputs** en el **área principal**. 
+
+&#x279C; se recomienda poner los **outputs** dentro de **TARJETAS** &#x279C; usando la función **bslib::card()** de la cual hablaremos mas adelante.
+
+&#x279C; y los contenidos del **sidebar** en un objeto **bslib::sidebar()** para agregar títulos y estilos personalizados.
+
+
+Vamos a trabajar con la base de datos: **Partos de Rosario**.
+Y vamos a hablar de como llegamos a armar esta visualización:
+
+```{r, out.width="50%"}
+knitr::include_graphics("C:/Users/pazre/Desktop/Facultad/Shiny")
+```
+
+```{r, eval=FALSE}
+datos <- readr::read_csv("partos_rosario.csv")
+
+ui <- bslib::page_sidebar(
+  fillable = FALSE, # Más sobre esto en la sección "Scrolling vs Filling"
+
+  title = "Partos en Rosario",
+  sidebar = bslib::sidebar(
+    title = "Panel de Control",
+    
+    shinyWidgets::pickerInput(
+      inputId = "efector",
+      label = "Seleccionar Efector",
+      choices = datos$efector |> unique() |> sort(),
+      selected = "HRSP"
+    ),
+    
+    shinyWidgets::pickerInput(
+      inputId = "año",
+      label = "Seleccionar Año",
+      choices = datos$año |> unique() |> sort(decreasing = TRUE),
+      selected = max(datos$año)
+    )
+    
+  ),
+  
+  bslib::card(
+    full_screen = TRUE,
+    bslib::card_header("Partos según sexo del bebé"),
+    echarts4r::echarts4rOutput(outputId = "graf_sexo_bebe")
+  ),
+  
+  bslib::card(
+    full_screen = TRUE,
+    bslib::card_header("Partos según edad de la madre y tipo de parto"),
+    echarts4r::echarts4rOutput(outputId = "graf_edad_madre_tipo_parto")
+  ),
+  
+  bslib::card(
+    full_screen = TRUE,
+    bslib::card_header("Datos"),
+    reactable::reactableOutput(outputId = "tabla")
+  )
+  
+)
+
+server <- function(input, output) {
+  
+  datos_filtrados <- shiny::eventReactive(c(input$efector, input$año), {
+    datos |> 
+      dplyr::filter(
+        efector == input$efector,
+        año == input$año
+      )
+  })
+  
+  output$graf_sexo_bebe <- echarts4r::renderEcharts4r({
+    datos_filtrados() |>
+      dplyr::count(sexo_bb) |> 
+      echarts4r::e_chart(x = sexo_bb) |> 
+      echarts4r::e_pie(
+        serie = n,
+        name = "Número de partos", # Cambiar el nombre de la serie
+        itemStyle = list(
+          borderColor = "black" # Agregar bordes al gráfico
+        ),
+        label = list(
+          position = "inside", # Ubicar los labels dentro del gráfico
+          formatter = "{b}\n\n{d}%", # Agregar porcentajes a los labels
+          fontSize = 15 # Modificar el tamaño de fuente del label
+        ),
+        # Agregar "énfasis"
+        emphasis = list(
+          label = list(
+            fontSize = 20,
+            fontWeight = "bold"
+          )
+        )
+      ) |> 
+      echarts4r::e_legend(show = FALSE) |> # Remover guía
+      echarts4r::e_tooltip() |> # Agregar tooltip
+      echarts4r::e_color(c("lightgrey", "white")) # Definir colores para cada categoría
+
+  })
+  
+  output$graf_edad_madre_tipo_parto <- echarts4r::renderEcharts4r({
+    datos_procesados <- datos_filtrados() |> 
+      dplyr::count(rango_edad, parto) |> 
+      dplyr::group_by(parto)
+    
+    datos_procesados |>
+      echarts4r::e_chart(x = rango_edad) |> 
+      echarts4r::e_bar(
+        serie = n,
+        stack = "barras_apiladas" # Para nuestro ejemplo, este nombre no es importante
+      ) |> 
+      echarts4r::e_flip_coords() |> 
+      echarts4r::e_tooltip(trigger = "axis") |> 
+      echarts4r::e_grid(containLabel = TRUE)
+  })
+  
+  output$tabla <- reactable::renderReactable({
+    datos_filtrados() |> 
+      reactable::reactable()
+  })
+}
+
+shiny::shinyApp(ui, server)
+```
+
+
+
